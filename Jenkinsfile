@@ -8,11 +8,15 @@ pipeline {
     }
 
     tools {
-        maven 'Maven_3'  // This must match your Maven tool name in Jenkins Global Tool Configuration
+        maven 'Maven_3'  // Make sure this matches your Maven tool name in Jenkins
     }
 
     stages {
-        // No explicit checkout needed if Jenkins pipeline SCM checkout is enabled
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Yug3010/BootcampProject4'
+            }
+        }
 
         stage('Build') {
             steps {
@@ -22,7 +26,7 @@ pipeline {
 
         stage('SonarQube') {
             steps {
-                withSonarQubeEnv('MySonarQube') {
+                withSonarQubeEnv('SonarQubeServer') {  // Updated to match your Jenkins config name
                     sh "mvn sonar:sonar -Dsonar.login=${SONAR_TOKEN}"
                 }
             }
