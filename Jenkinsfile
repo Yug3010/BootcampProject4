@@ -5,11 +5,11 @@ pipeline {
         PATH = "/usr/local/bin:${env.PATH}"
         ACR = 'yugacr3010.azurecr.io'
         IMAGE = "${ACR}/spring-petclinic:latest"
-        SONAR_TOKEN = credentials('sonar-token')
+        SONAR_TOKEN = credentials('sonar-token') // Make sure this ID matches Jenkins credentials
     }
 
     tools {
-        maven 'Maven_3'  // Make sure this matches your Maven tool name in Jenkins
+        maven 'Maven_3' // Match this with Jenkins Global Tool Configuration
     }
 
     stages {
@@ -27,7 +27,7 @@ pipeline {
 
         stage('SonarQube') {
             steps {
-                withSonarQubeEnv('SonarQubeServer') {  // Updated to match your Jenkins config name
+                withSonarQubeEnv('SonarQubeServer') { // This must match your SonarQube configuration name in Jenkins
                     sh "mvn sonar:sonar -Dsonar.login=${SONAR_TOKEN}"
                 }
             }
@@ -35,11 +35,13 @@ pipeline {
 
         stage('Docker Build & Push') {
             steps {
-                sh """
-                   docker build -t ${IMAGE} .
-                   az acr login --name yugacr3010
-                   docker push ${IMAGE}
-                   """
+                withCredentials([usernamePassword(credentialsId: 'acr-creds', usernameVariable: 'ACR_USER', passwordVariable: 'ACR_PASS')]) {
+                    sh """
+                        docker build -t ${IMAGE} .
+                        echo $ACR_PASS | docker login ${ACR} -u $ACR_USER --password-stdin
+                        docker push ${IMAGE}
+                    """
+                }
             }
         }
 
