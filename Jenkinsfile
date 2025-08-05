@@ -7,13 +7,12 @@ pipeline {
         SONAR_TOKEN = credentials('sonar-token')
     }
 
-    stages {
-        stage('Checkout') {
-            steps {
-               git branch: 'main', url: 'https://github.com/spring-projects/spring-petclinic.git'
+    tools {
+        maven 'Maven_3'  // This must match your Maven tool name in Jenkins Global Tool Configuration
+    }
 
-            }
-        }
+    stages {
+        // No explicit checkout needed if Jenkins pipeline SCM checkout is enabled
 
         stage('Build') {
             steps {
@@ -31,15 +30,17 @@ pipeline {
 
         stage('Docker Build & Push') {
             steps {
-                sh 'docker build -t $IMAGE .'
-                sh 'az acr login --name myacrname123'
-                sh 'docker push $IMAGE'
+                sh """
+                   docker build -t ${IMAGE} .
+                   az acr login --name yugacr3010
+                   docker push ${IMAGE}
+                   """
             }
         }
 
         stage('Trivy Scan') {
             steps {
-                sh 'trivy image $IMAGE'
+                sh "trivy image ${IMAGE}"
             }
         }
 
