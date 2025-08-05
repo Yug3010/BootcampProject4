@@ -2,6 +2,7 @@ pipeline {
     agent any
 
     environment {
+        PATH = "/usr/local/bin:${env.PATH}"
         ACR = 'yugacr3010.azurecr.io'
         IMAGE = "${ACR}/spring-petclinic:latest"
         SONAR_TOKEN = credentials('sonar-token')
