@@ -5,11 +5,11 @@ pipeline {
         PATH = "/usr/local/bin:${env.PATH}"
         ACR = 'yugacr3010.azurecr.io'
         IMAGE = "${ACR}/spring-petclinic:latest"
-        SONAR_TOKEN = credentials('sonar-token') // Make sure this ID matches Jenkins credentials
+        SONAR_TOKEN = credentials('sonar-token')
     }
 
     tools {
-        maven 'Maven_3' // Match this with Jenkins Global Tool Configuration
+        maven 'Maven_3'
     }
 
     stages {
@@ -27,7 +27,7 @@ pipeline {
 
         stage('SonarQube') {
             steps {
-                withSonarQubeEnv('SonarQubeServer') { // This must match your SonarQube configuration name in Jenkins
+                withSonarQubeEnv('SonarQubeServer') {
                     sh "mvn sonar:sonar -Dsonar.login=${SONAR_TOKEN}"
                 }
             }
@@ -47,7 +47,10 @@ pipeline {
 
         stage('Trivy Scan') {
             steps {
-                sh "trivy image ${IMAGE}"
+                sh """
+                    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+                    aquasec/trivy:latest image ${IMAGE}
+                """
             }
         }
 
@@ -56,6 +59,12 @@ pipeline {
                 sh 'kubectl apply -f k8s/deployment.yaml'
                 sh 'kubectl apply -f k8s/service.yaml'
             }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
         }
     }
 }
